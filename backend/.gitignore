@@ -1,0 +1,9 @@
+node_modules
+dist
+.env
+*.log
+docker-compose.production.yml
+.env.production
+.env.*
+!.env.example
+

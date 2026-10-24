@@ -1,0 +1,473 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ===== USER & KARYAWAN =====
+
+model User {
+  id_user  Int    @id @default(autoincrement())
+  username String @unique @db.VarChar(50)
+  password String @db.VarChar(255)
+
+  role String @db.VarChar(20)
+
+  role_id      Int?
+  roleRelation Role? @relation(fields: [role_id], references: [id])
+
+  karyawan Karyawan?
+
+  @@map("user")
+}
+
+model Karyawan {
+  id_karyawan Int     @id @default(autoincrement())
+  id_user     Int     @unique
+  nama        String  @db.VarChar(100)
+  no_hp       String? @db.VarChar(20)
+  status      String? @db.VarChar(20)
+
+  user              User                @relation(fields: [id_user], references: [id_user])
+  rencanaKanvas     RencanaKanvas[]
+  kasbonProduk      KasbonProduk[]
+  kasbonOperasional KasbonOperasional[]
+
+  @@map("karyawan")
+}
+
+// ===== WILAYAH KANVAS =====
+
+model WilayahKanvas {
+  id_wilayah   Int     @id @default(autoincrement())
+  nama_wilayah String  @db.VarChar(100)
+  keterangan   String? @db.VarChar(255)
+
+  outlet        Outlet[]
+  rencanaKanvas RencanaKanvas[]
+
+  @@map("wilayah_kanvas")
+}
+
+// ===== KENDARAAN =====
+
+model Kendaraan {
+  id_kendaraan Int     @id @default(autoincrement())
+  nomor_plat   String  @unique @db.VarChar(20)
+  jenis        String? @db.VarChar(50)
+  status       String? @db.VarChar(20)
+
+  rencanaKanvas RencanaKanvas[]
+
+  @@map("kendaraan")
+}
+
+// ===== OUTLET =====
+
+model Outlet {
+  id_outlet   Int     @id @default(autoincrement())
+  id_wilayah  Int
+  nama_outlet String  @db.VarChar(100)
+  alamat      String? @db.Text
+  no_hp       String? @db.VarChar(20)
+
+  wilayahKanvas       WilayahKanvas         @relation(fields: [id_wilayah], references: [id_wilayah])
+  detailRencanaKanvas DetailRencanaKanvas[]
+  invoiceOutlet       InvoiceOutlet[]
+  kartuPiutangOutlet  KartuPiutangOutlet[]
+
+  @@map("outlet")
+}
+
+// ===== TIPE HARGA =====
+
+model TipeHarga {
+  id_tipe_harga Int    @id @default(autoincrement())
+  nama_tipe     String @db.VarChar(50)
+
+  produkHarga ProdukHarga[]
+
+  @@map("tipe_harga")
+}
+
+// ===== PRODUK =====
+
+model Produk {
+  id_produk   Int     @id @default(autoincrement())
+  nama_produk String  @db.VarChar(100)
+  barcode     String? @db.VarChar(50)
+  satuan      String? @db.VarChar(20)
+  status      String? @db.VarChar(20)
+
+  detailKasbonProduk       DetailKasbonProduk[]
+  detailProdukOut          DetailProdukOut[]
+  produkHarga              ProdukHarga[]
+  detailProdukIn           DetailProdukIn[]
+  mutasiBatch              MutasiBatch[]
+  detailInvoiceOutlet      DetailInvoiceOutlet[]
+  detailInvoiceReturProduk DetailInvoiceReturProduk[]
+  batchProduk              BatchProduk[]
+
+  @@map("produk")
+}
+
+// ===== GUDANG =====
+
+model Gudang {
+  id_gudang   Int     @id @default(autoincrement())
+  nama_gudang String  @db.VarChar(100)
+  lokasi      String? @db.VarChar(255)
+
+  produkOut   ProdukOut[]
+  produkIn    ProdukIn[]
+  mutasiBatch MutasiBatch[]
+  stokGudang  StokGudang[]
+
+  @@map("gudang")
+}
+
+// ===== RENCANA KANVAS =====
+
+model RencanaKanvas {
+  id_rencana   Int      @id @default(autoincrement())
+  id_karyawan  Int
+  id_kendaraan Int
+  id_wilayah   Int
+  tanggal      DateTime @db.Date
+  status       String   @db.VarChar(20)
+
+  karyawan      Karyawan              @relation(fields: [id_karyawan], references: [id_karyawan])
+  kendaraan     Kendaraan             @relation(fields: [id_kendaraan], references: [id_kendaraan])
+  wilayahKanvas WilayahKanvas         @relation(fields: [id_wilayah], references: [id_wilayah])
+  detailRencana DetailRencanaKanvas[]
+  produkOut     ProdukOut[]
+  invoiceOutlet InvoiceOutlet[]
+
+  @@map("rencana_kanvas")
+}
+
+// ===== DETAIL RENCANA KANVAS =====
+
+model DetailRencanaKanvas {
+  id_detail_rencana Int @id @default(autoincrement())
+  id_rencana        Int
+  id_outlet         Int
+  urutan            Int
+
+  rencanaKanvas RencanaKanvas @relation(fields: [id_rencana], references: [id_rencana])
+  outlet        Outlet        @relation(fields: [id_outlet], references: [id_outlet])
+
+  @@map("detail_rencana_kanvas")
+}
+
+// ===== KASBON PRODUK =====
+
+model KasbonProduk {
+  id_kasbon_produk Int      @id @default(autoincrement())
+  id_karyawan      Int
+  tanggal          DateTime @db.Date
+  status           String   @db.VarChar(20)
+  keterangan       String?  @db.VarChar(255)
+
+  karyawan           Karyawan             @relation(fields: [id_karyawan], references: [id_karyawan])
+  detailKasbonProduk DetailKasbonProduk[]
+
+  @@map("kasbon_produk")
+}
+
+// ===== DETAIL KASBON PRODUK =====
+
+model DetailKasbonProduk {
+  id_detail_kasbon Int @id @default(autoincrement())
+  id_kasbon_produk Int
+  id_produk        Int
+  qty              Int
+
+  kasbonProduk KasbonProduk @relation(fields: [id_kasbon_produk], references: [id_kasbon_produk])
+  produk       Produk       @relation(fields: [id_produk], references: [id_produk])
+
+  @@map("detail_kasbon_produk")
+}
+
+// ===== KASBON OPERASIONAL =====
+
+model KasbonOperasional {
+  id_kasbon_operasional Int      @id @default(autoincrement())
+  id_karyawan           Int
+  tanggal               DateTime @db.Date
+  jumlah                Decimal  @db.Decimal(14, 2)
+  keterangan            String?  @db.VarChar(255)
+  status                String   @db.VarChar(20)
+
+  karyawan Karyawan @relation(fields: [id_karyawan], references: [id_karyawan])
+
+  @@map("kasbon_operasional")
+}
+
+// ===== PRODUK OUT =====
+
+model ProdukOut {
+  id_produk_out Int      @id @default(autoincrement())
+  id_rencana    Int
+  id_gudang     Int
+  tanggal       DateTime @db.Date
+  status        String   @db.VarChar(20)
+
+  rencanaKanvas   RencanaKanvas     @relation(fields: [id_rencana], references: [id_rencana])
+  gudang          Gudang            @relation(fields: [id_gudang], references: [id_gudang])
+  detailProdukOut DetailProdukOut[]
+
+  @@map("produk_out")
+}
+
+// ===== DETAIL PRODUK OUT =====
+
+model DetailProdukOut {
+  id_detail_out Int @id @default(autoincrement())
+  id_produk_out Int
+  id_produk     Int
+  id_batch      Int
+  qty           Int
+
+  produkOut ProdukOut   @relation(fields: [id_produk_out], references: [id_produk_out])
+  produk    Produk      @relation(fields: [id_produk], references: [id_produk])
+  batch     BatchProduk @relation(fields: [id_batch], references: [id_batch])
+
+  @@map("detail_produk_out")
+}
+
+// ===== PRODUK HARGA =====
+
+model ProdukHarga {
+  id_produk_harga Int     @id @default(autoincrement())
+  id_produk       Int
+  id_tipe_harga   Int
+  harga           Decimal @db.Decimal(14, 2)
+
+  produk    Produk    @relation(fields: [id_produk], references: [id_produk])
+  tipeHarga TipeHarga @relation(fields: [id_tipe_harga], references: [id_tipe_harga])
+
+  @@map("produk_harga")
+}
+
+// ===== PRODUK IN =====
+
+model ProdukIn {
+  id_produk_in    Int      @id @default(autoincrement())
+  id_gudang       Int
+  tanggal         DateTime @db.Date
+  jenis_transaksi String   @db.VarChar(30)
+  keterangan      String?  @db.VarChar(255)
+
+  gudang         Gudang           @relation(fields: [id_gudang], references: [id_gudang])
+  detailProdukIn DetailProdukIn[]
+
+  @@map("produk_in")
+}
+
+// ===== DETAIL PRODUK IN =====
+
+model DetailProdukIn {
+  id_detail_in Int @id @default(autoincrement())
+  id_produk_in Int
+  id_produk    Int
+  id_batch     Int
+  qty          Int
+
+  produkIn ProdukIn    @relation(fields: [id_produk_in], references: [id_produk_in])
+  produk   Produk      @relation(fields: [id_produk], references: [id_produk])
+  batch    BatchProduk @relation(fields: [id_batch], references: [id_batch])
+
+  @@map("detail_produk_in")
+}
+
+// ===== MUTASI BATCH =====
+
+model MutasiBatch {
+  id_mutasi   Int      @id @default(autoincrement())
+  id_produk   Int
+  id_gudang   Int
+  id_batch    Int
+  tanggal     DateTime @db.Date
+  stok_masuk  Int
+  stok_keluar Int
+  keterangan  String?  @db.VarChar(255)
+
+  produk Produk      @relation(fields: [id_produk], references: [id_produk])
+  gudang Gudang      @relation(fields: [id_gudang], references: [id_gudang])
+  batch  BatchProduk @relation(fields: [id_batch], references: [id_batch])
+
+  @@map("mutasi_batch")
+}
+
+// ===== INVOICE OUTLET =====
+
+model InvoiceOutlet {
+  id_invoice Int      @id @default(autoincrement())
+  id_outlet  Int
+  id_rencana Int
+  tanggal    DateTime @db.Date
+  total      Decimal  @db.Decimal(14, 2)
+  status     String   @db.VarChar(20)
+
+  outlet            Outlet                @relation(fields: [id_outlet], references: [id_outlet])
+  rencanaKanvas     RencanaKanvas         @relation(fields: [id_rencana], references: [id_rencana])
+  detailInvoice     DetailInvoiceOutlet[]
+  returProduk       InvoiceReturProduk[]
+  kartuPiutang      KartuPiutangOutlet[]
+  pembayaranInvoice PembayaranInvoice[]
+
+  @@map("invoice_outlet")
+}
+
+// ===== DETAIL INVOICE OUTLET =====
+
+model DetailInvoiceOutlet {
+  id_detail_invoice Int     @id @default(autoincrement())
+  id_invoice        Int
+  id_produk         Int
+  id_batch          Int
+  qty               Int
+  harga             Decimal @db.Decimal(14, 2)
+  subtotal          Decimal @db.Decimal(14, 2)
+
+  invoice InvoiceOutlet @relation(fields: [id_invoice], references: [id_invoice])
+  produk  Produk        @relation(fields: [id_produk], references: [id_produk])
+  batch   BatchProduk   @relation(fields: [id_batch], references: [id_batch])
+
+  @@map("detail_invoice_outlet")
+}
+
+// ===== INVOICE RETUR PRODUK =====
+
+model InvoiceReturProduk {
+  id_retur   Int      @id @default(autoincrement())
+  id_invoice Int
+  tanggal    DateTime @db.Date
+  alasan     String?  @db.VarChar(255)
+  status     String   @db.VarChar(20)
+
+  invoice     InvoiceOutlet              @relation(fields: [id_invoice], references: [id_invoice])
+  detailRetur DetailInvoiceReturProduk[]
+
+  @@map("invoice_retur_produk")
+}
+
+// ===== DETAIL INVOICE RETUR PRODUK =====
+
+model DetailInvoiceReturProduk {
+  id_detail_retur Int     @id @default(autoincrement())
+  id_retur        Int
+  id_produk       Int
+  id_batch        Int
+  qty             Int
+  harga           Decimal @db.Decimal(14, 2)
+
+  retur  InvoiceReturProduk @relation(fields: [id_retur], references: [id_retur])
+  produk Produk             @relation(fields: [id_produk], references: [id_produk])
+  batch  BatchProduk        @relation(fields: [id_batch], references: [id_batch])
+
+  @@map("detail_invoice_retur_produk")
+}
+
+// ===== KARTU PIUTANG OUTLET =====
+
+model KartuPiutangOutlet {
+  id_piutang Int      @id @default(autoincrement())
+  id_outlet  Int
+  id_invoice Int
+  tanggal    DateTime @db.Date
+  debit      Decimal  @db.Decimal(14, 2)
+  kredit     Decimal  @db.Decimal(14, 2)
+  keterangan String?  @db.VarChar(255)
+
+  outlet  Outlet        @relation(fields: [id_outlet], references: [id_outlet])
+  invoice InvoiceOutlet @relation(fields: [id_invoice], references: [id_invoice])
+
+  @@map("kartu_piutang_outlet")
+}
+
+// ===== PEMBAYARAN INVOICE =====
+
+model PembayaranInvoice {
+  id_pembayaran Int      @id @default(autoincrement())
+  id_invoice    Int
+  tanggal       DateTime @db.Date
+  jumlah        Decimal  @db.Decimal(14, 2)
+  metode        String   @db.VarChar(30)
+
+  invoice InvoiceOutlet @relation(fields: [id_invoice], references: [id_invoice])
+
+  @@map("pembayaran_invoice")
+}
+
+// ===== BATCH PRODUK =====
+
+model BatchProduk {
+  id_batch     Int       @id @default(autoincrement())
+  id_produk    Int
+  kode_batch   String?   @db.VarChar(50)
+  expired_date DateTime? @db.Date
+  stok         Int
+
+  produk                   Produk                     @relation(fields: [id_produk], references: [id_produk])
+  detailProdukOut          DetailProdukOut[]
+  detailProdukIn           DetailProdukIn[]
+  mutasiBatch              MutasiBatch[]
+  detailInvoiceOutlet      DetailInvoiceOutlet[]
+  detailInvoiceReturProduk DetailInvoiceReturProduk[]
+  stokGudang               StokGudang[]
+
+  @@map("batch_produk")
+}
+
+model StokGudang {
+  id_stok_gudang Int @id @default(autoincrement())
+  id_batch       Int
+  id_gudang      Int
+  stok           Int @default(0)
+
+  batch  BatchProduk @relation(fields: [id_batch], references: [id_batch])
+  gudang Gudang      @relation(fields: [id_gudang], references: [id_gudang])
+
+  @@unique([id_batch, id_gudang])
+  @@map("stok_gudang")
+}
+
+// ===== MASTER ROLE =====
+
+model Role {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  users           User[]
+  permissionRoles PermissionRole[]
+
+  @@map("role")
+}
+
+// ===== MASTER PERMISSION =====
+
+model Permission {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  permissionRoles PermissionRole[]
+
+  @@map("permission")
+}
+
+// ===== RELASI ROLE DAN PERMISSION =====
+
+model PermissionRole {
+  permission_id Int
+  role_id       Int
+
+  permission Permission @relation(fields: [permission_id], references: [id], onDelete: Cascade)
+  role       Role       @relation(fields: [role_id], references: [id], onDelete: Cascade)
+
+  @@id([permission_id, role_id])
+  @@map("permission_role")
+}
